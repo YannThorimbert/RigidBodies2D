@@ -9,9 +9,9 @@ from ellipsecalculus import Ellipse2D
 
 W, H = 500, 500
 DT = 10.e-3
-COLL_TOL = 1
+COLL_TOL = 4
 TOL_DEL = COLL_TOL
-SPRING_CONSTANT = 800.
+SPRING_CONSTANT = 500.
 MIND_D = 1
 MAX_FORCE_INTENSITY = SPRING_CONSTANT*(MIND_D-COLL_TOL)
 GRAVITY = V2(0, 9.81)
@@ -26,7 +26,7 @@ def sgn(x):
         return -1.
     return 0.
 
-def rad2deg(x):#180->pi, d->r
+def rad2deg(x):
     return x*180./math.pi
 
 def deg2rad(x):
@@ -143,20 +143,6 @@ class EllipticRigidBody2D(Ellipse2D):
 
 
 
-    def get_radius_at_angle(self, angle):
-        """Angle is relative to self's a axis. unit is degrees"""
-        angle = deg2rad(angle)
-        tan2 = math.tan(angle)**2
-        dx2 = self.a2*self.b2/(self.b2 + self.a2*tan2)
-        dy2 = tan2 * dx2
-        return math.sqrt(dx2 + dy2)
-
-    def get_point_at_angle(self, angle):
-        """Angle is relative to self's a axis. unit is degrees.
-        Return point relative to self.cm"""
-        radius = self.get_radius_at_angle(angle)
-        return V2(radius,0).rotate(angle)
-
 ##    def draw(self): #faire avec draw.ellipse
 ####        s = pygame.transform.rotate(self.img, self.angle)
 ####        r = s.get_rect()
@@ -190,8 +176,6 @@ class EllipticRigidBody2D(Ellipse2D):
         return self.mass*(0.5*self.velocity.length()**2 + GRAVITY.y*(H-self.cm.y)) +\
                 0.5*self.moment_of_inertia*self.ang_velocity**2
 
-    def get_angle_to(self, direction):
-        return V2(1,0).rotate(self.angle).angle_to(direction)
 
     def collide_spring_wall(self, axis, wallcoord, normal):
         points = self.get_wall_colliding_points(axis, V2(wallcoord), V2(normal))
@@ -218,7 +202,15 @@ class EllipticRigidBody2D(Ellipse2D):
         if points:
             d, p1, p2 = points
             force_intensity = SPRING_CONSTANT*(d-COLL_TOL)
-            normal_to_wall = (p1-p2).normalize()
+            normal_to_wall = other.get_normal(V2(p2),screen)
+##            normal_to_wall = (p1-p2).normalize()
+##            if self is m1:
+##                print("uh")
+##                screen.fill((255,255,255))
+##                draw_meshes()
+##                normal_to_wall = other.get_normal(V2(p2),screen)
+##                pygame.display.flip()
+##                app.pause()
             force = -force_intensity * normal_to_wall
             contact_point = p1
             fn = force.normalize()
@@ -275,12 +267,13 @@ app = thorpy.Application((W,H))
 
 m1 = EllipticRigidBody2D(30, 10, W//2, H//2, angle=30.)
 m2 = EllipticRigidBody2D(30, 30, W//2+40, H//2-100)
-##m1.angle = 20.
-meshes = [m1,m2]
-R = 20
+m3 = EllipticRigidBody2D(10, 30, W//2-40, H//2-200)
+m1.angle = 20.
+meshes = [m1,m2,m3]
+##R = 20
 ##meshes = []
-##for i in range(50):
-##    m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(R+1,H-R-1))
+##for i in range(10):
+##    m = EllipticRigidBody2D(30, 20, random.randint(R+1,W-R-1), random.randint(R+1,H-R-1), random.randint(0,360))
 ##    while m.is_in_collision(meshes):
 ##        m.set_pos((random.randint(R+1,W-R-1), random.randint(R+1,H-R-1)))
 ##    meshes.append(m)
