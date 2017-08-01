@@ -11,7 +11,7 @@ W, H = 500, 500
 DT = 10.e-3
 COLL_TOL = 1
 TOL_DEL = COLL_TOL
-SPRING_CONSTANT = 1000.
+SPRING_CONSTANT = 800.
 MIND_D = 1
 MAX_FORCE_INTENSITY = SPRING_CONSTANT*(MIND_D-COLL_TOL)
 GRAVITY = V2(0, 9.81)
@@ -217,23 +217,26 @@ class EllipticRigidBody2D(Ellipse2D):
         points = self.get_colliding_points(other)
         if points:
             d, p1, p2 = points
-            p1 = self.absolute_pos(p1)
-            p2 = other.absolute_pos(p2)
             force_intensity = SPRING_CONSTANT*(d-COLL_TOL)
             normal_to_wall = (p1-p2).normalize()
             force = -force_intensity * normal_to_wall
             contact_point = p1
+            fn = force.normalize()
+            if (p1 + fn).distance_to(self.cm) > p1.distance_to(self.cm):
+                force *= -1.
             self.apply_force(contact_point, V2(force))
             #
 ##            print(self.angle, self.ang_velocity)
-##            screen.fill((255,255,255))
-##            draw_meshes()
-##            force /= 10.
-##            gfx.line(screen, int(contact_point.x), int(contact_point.y),
-##                    int(contact_point.x+force.x), int(contact_point.y+force.y), (0,0,255))
-##            gfx.aacircle(screen, int(contact_point.x), int(contact_point.y), 2, (0,0,255))
-##            pygame.display.flip()
-##            app.pause()
+##            if self is m1:
+##                print(force, force.angle_to(p1-self.cm))
+##                screen.fill((255,255,255))
+##                draw_meshes()
+##                force /= 10.
+##                gfx.line(screen, int(contact_point.x), int(contact_point.y),
+##                        int(contact_point.x+force.x), int(contact_point.y+force.y), (0,0,255))
+##                gfx.aacircle(screen, int(contact_point.x), int(contact_point.y), 2, (0,0,255))
+##                pygame.display.flip()
+##                app.pause()
 
     def is_in_collision(self, others):
         for other in others:
