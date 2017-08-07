@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import math
+import math, sys
 import pygame
 from pygame.math import Vector2 as V2
 import pygame.gfxdraw as gfx
@@ -164,8 +164,10 @@ screen = pygame.display.set_mode((W,H))
 ##m1 = Sphere2D(30, W//2, H//2)
 ##m2 = Sphere2D(30, W//2+40, H//2-100)
 ##meshes = [m1,m2]
+
+if len(sys.argv) > 1:
+    random.seed(int(sys.argv[1]))
 R = 20
-##meshes = [ for i in range(20)]
 meshes = []
 for i in range(50):
     m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(R+1,H))
