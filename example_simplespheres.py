@@ -13,7 +13,10 @@ SPRING_CONSTANT = 1000.
 MIND_D = 1
 MAX_FORCE_INTENSITY = SPRING_CONSTANT*(MIND_D-COLL_TOL)
 GRAVITY = V2(0, 9.81)
-FRICTION_COEFF = -0.5e-2
+FRICTION_COEFF = -5e-3
+COLL_FRICTION = 0.999
+
+
 
 COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
 
@@ -107,6 +110,7 @@ class Sphere2D:
             contact_point = self.cm + normal_to_wall*self.radius
             force = force_intensity * normal_to_wall
             self.apply_force(contact_point, V2(force))
+            self.velocity *= COLL_FRICTION
 
     def is_in_collision(self, others):
         for other in others:
@@ -131,7 +135,7 @@ class Sphere2D:
             contact_point = self.cm + normal_to_wall*self.radius
             force = force_intensity * normal_to_wall
             self.normal_force += force
-
+            self.velocity *= COLL_FRICTION
 
 def draw_meshes():
     for m in meshes:
