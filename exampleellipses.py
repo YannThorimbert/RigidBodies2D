@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 import math
-import thorpy, pygame
+import pygame
 from pygame.math import Vector2 as V2
 import pygame.gfxdraw as gfx
 import random
@@ -263,7 +263,7 @@ def refresh_physics():
         m.refresh_physics()
 
 
-app = thorpy.Application((W,H))
+screen = pygame.display.set_mode((W,H))
 
 m1 = EllipticRigidBody2D(30, 10, W//2, H//2, angle=30.)
 m2 = EllipticRigidBody2D(30, 30, W//2+40, H//2-100)
@@ -279,7 +279,6 @@ meshes = [m1,m2,m3]
 ##    meshes.append(m)
 
 
-screen = app.get_screen()
 screen.fill((255,255,255))
 draw_meshes()
 pygame.display.flip()
@@ -306,7 +305,7 @@ while loop:
         pygame.display.flip()
     iteration += 1
 
-app.quit()
+pygame.quit()
 
 #definir cutoffM et m
 #collision : utiliser distance_to !!!!!!!!!!!!!!!

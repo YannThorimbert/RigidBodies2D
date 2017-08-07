@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 import math
-import thorpy, pygame
+import pygame
 from pygame.math import Vector2 as V2
 import pygame.gfxdraw as gfx
 import random
@@ -165,8 +165,7 @@ def refresh_physics():
         m.refresh_physics()
 
 
-app = thorpy.Application((W,H))
-
+screen = pygame.display.set_mode((W,H))
 ##m1 = Sphere2D(30, W//2, H//2)
 ##m2 = Sphere2D(30, W//2+40, H//2-100)
 ##meshes = [m1,m2]
@@ -180,7 +179,6 @@ for i in range(50):
     meshes.append(m)
 
 
-screen = app.get_screen()
 screen.fill((255,255,255))
 draw_meshes()
 pygame.display.flip()
@@ -207,9 +205,9 @@ while loop:
         pygame.display.flip()
     iteration += 1
 
-app.quit()
+pygame.quit()
 
 #a optimiser pour jeuxvideos
     # boucle collision /2
     # pas de vitesse angulaire ==> plein de simplifications
-    # positions arrondies sur une grille pour détection de collisions
+    # positions arrondies sur une grille pour dÃ©tection de collisions

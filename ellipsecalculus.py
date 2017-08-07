@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import math, pygame, thorpy
+import math, pygame
 from pygame.math import Vector2 as V2
 import pygame.gfxdraw as gfx
 
@@ -102,33 +102,3 @@ class Ellipse2D:
 ##            pos = gfx.aacircle(screen, int(point.x), int(point.y), 3, (0,0,0))
 ##        gfx.aapolygon(screen, points, (0,0,0))
         gfx.aacircle(screen, int(self.cm.x), int(self.cm.y), 3, (0,0,0))
-
-
-
-if __name__ == "__main__":
-    def refresh():
-        pass
-
-    W, H = 800, 600
-    e1 = Ellipse2D(120, 50, (W/2, H/2), angle=60.)
-    e2 = Ellipse2D(60, 60, (W/2+100, H/2), 0.)
-
-
-    app = thorpy.Application((W,H))
-
-    b = thorpy.Background.make()
-    thorpy.add_time_reaction(b, refresh)
-
-    screen = b.get_image()
-    gfx.filled_circle(screen, W//2, H//2, 3, (0,255,0))
-    e1.draw(screen)
-    e2.draw(screen)
-    for p in e1.get_all_intersections(e2):
-        print(p)
-        gfx.filled_circle(screen, int(p.x), int(p.y), 3, (0,0,255))
-    pygame.display.flip()
-
-    m = thorpy.Menu(b).play()
-
-
-    app.quit()
