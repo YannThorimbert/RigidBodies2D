@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import math
+import math, sys
 import pygame
 from pygame.math import Vector2 as V2
 import pygame.gfxdraw as gfx
@@ -16,7 +16,10 @@ SPRING_CONSTANT = 1000.
 MIND_D = 1
 MAX_FORCE_INTENSITY = SPRING_CONSTANT*(MIND_D-COLL_TOL)
 GRAVITY = V2(0, 9.81)
-FRICTION_COEFF = -0.5e-2
+FRICTION_COEFF = -5e-3
+COLL_FRICTION = 0.999
+
+
 
 COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
 
@@ -110,6 +113,7 @@ class Sphere2D:
             contact_point = self.cm + normal_to_wall*self.radius
             force = force_intensity * normal_to_wall
             self.apply_force(contact_point, V2(force))
+            self.velocity *= COLL_FRICTION
 
     def is_in_collision(self, others):
         for other in others:
@@ -134,7 +138,7 @@ class Sphere2D:
             contact_point = self.cm + normal_to_wall*self.radius
             force = force_intensity * normal_to_wall
             self.normal_force += force
-
+            self.velocity *= COLL_FRICTION
 
 def draw_meshes():
     for m in meshes:
@@ -167,8 +171,10 @@ screen = pygame.display.set_mode((W,H))
 ##m1 = Sphere2D(30, W//2, H//2)
 ##m2 = Sphere2D(30, W//2+40, H//2-100)
 ##meshes = [m1,m2]
+
+if len(sys.argv) > 1:
+    random.seed(int(sys.argv[1]))
 R = 20
-##meshes = [ for i in range(20)]
 meshes = []
 for i in range(50):
     m = Sphere2D(R, R + random.random()*(W-R), R + random.random()*(H-R))
@@ -202,7 +208,3 @@ while loop:
 
 pygame.quit()
 
-#a optimiser pour jeuxvideos
-    # boucle collision /2
-    # pas de vitesse angulaire ==> plein de simplifications
-    # positions arrondies sur une grille pour detection de collisions
