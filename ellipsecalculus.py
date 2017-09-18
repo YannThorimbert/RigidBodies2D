@@ -9,6 +9,8 @@ def rad2deg(x):#180->pi, d->r
 def deg2rad(x):
     return x*math.pi/180.
 
+RESOLUTION = 1.
+
 class Ellipse2D:
 
     def __init__(self, a, b, cm, angle):
@@ -16,8 +18,8 @@ class Ellipse2D:
         self.b = b
         self.cm = V2(cm)
         self.angle = angle
-        self.nx = int(0.5*self.a)
-        self.ny = int(0.5*self.b)
+        self.nx = int(RESOLUTION*self.a)
+        self.ny = int(RESOLUTION*self.b)
         self.max_radius = max([self.a, self.b])
 
 
@@ -101,4 +103,46 @@ class Ellipse2D:
             gfx.pixel(screen, int(point.x), int(point.y), (0,0,0))
 ##            pos = gfx.aacircle(screen, int(point.x), int(point.y), 3, (0,0,0))
 ##        gfx.aapolygon(screen, points, (0,0,0))
+        xy = self.absolute_pos(V2(self.a,0))
+        x = int(xy[0])
+        y = int(xy[1])
+        gfx.line(screen, int(self.cm.x), int(self.cm.y), x, y, (0,0,0))
         gfx.aacircle(screen, int(self.cm.x), int(self.cm.y), 3, (0,0,0))
+
+
+def draw():
+    screen.fill((255,255,255))
+    for e in ellipses:
+        e.draw(screen)
+    pygame.display.flip()
+
+def build_lut(e1, e2, A, D):
+    lut = [[None for dist in range(D)] for angle in range(A)]
+    e1.angle = 0.
+    for angle in range(A):
+        e2.angle = angle
+        for dist in range(D):
+            e2.cm = V2(dist, 0)
+            lut[angle][dist] = e1.get_one_intersection(e2)
+
+
+screen = pygame.display.set_mode((800,600))
+e1 = Ellipse2D(100,50,(200,200),50)
+e2 = Ellipse2D(100,50,(300,300),0)
+ellipses = [e1,e2]
+
+loop = True
+while loop:
+    for e in pygame.event.get():
+        if e.type == pygame.QUIT:
+            loop = False
+        elif e.type == pygame.MOUSEMOTION:
+            e1.cm = V2(e.pos)
+            draw()
+        elif e.type == pygame.MOUSEBUTTONDOWN:
+            e1.angle += 10.
+    i = e1.get_one_intersection(e2)
+    if i:
+        print(i)
+
+pygame.quit()
