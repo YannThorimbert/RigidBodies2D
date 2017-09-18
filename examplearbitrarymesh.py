@@ -21,7 +21,7 @@ def refresh_physics():
 
 W, H = 500, 500 #size of the domain (and size of screen)
 
-m1 = physics.get_polygon(3, 20) #get n-polygon of 'radius' 20
+m1 = physics.get_polygon(5, 20) #get n-polygon of 'radius' 20
 m2 = physics.get_polygon(3, 20)
 m1.move((250,250))
 m1.rotate(180)

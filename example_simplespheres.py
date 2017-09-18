@@ -169,14 +169,22 @@ screen = pygame.display.set_mode((W,H))
 ##m2 = Sphere2D(30, W//2+40, H//2-100)
 ##meshes = [m1,m2]
 
-if len(sys.argv) > 1:
-    random.seed(int(sys.argv[1]))
+if len(sys.argv) == 3:
+    nspheres = int(sys.argv[1])
+    random.seed(int(sys.argv[2]))
+elif len(sys.argv) == 2:
+    nspheres = int(sys.argv[1])
+else:
+    nspheres = 50
+
+print("number of spheres:",nspheres)
 R = 20
 meshes = []
-for i in range(50):
-    m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(R+1,H))
+hmax = max(H, int(H * nspheres/50.))
+for i in range(nspheres):
+    m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(R+1,hmax))
     while m.is_in_collision(meshes):
-        m.set_pos((random.randint(R+1,W-R-1), random.randint(R+1,H)))
+        m.set_pos((random.randint(R+1,W-R-1), random.randint(R+1,hmax)))
     meshes.append(m)
 
 screen.fill((255,255,255))
