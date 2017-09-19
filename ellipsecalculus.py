@@ -9,7 +9,7 @@ def rad2deg(x):#180->pi, d->r
 def deg2rad(x):
     return x*math.pi/180.
 
-RESOLUTION = 1.
+RESOLUTION = 0.5
 
 class Ellipse2D:
 
@@ -60,7 +60,7 @@ class Ellipse2D:
                 for p2 in other_ellipse.iterate_points():
                     p2 = other_ellipse.absolute_pos(p2)
                     d = p1.distance_to(p2)
-                    if d < 1:
+                    if d < TOLERANCE:
                         return d, p1, p2
 
     def absolute_pos(self, p):
@@ -68,6 +68,12 @@ class Ellipse2D:
 
     def get_angle_to(self, direction):
         return V2(1,0).rotate(self.angle).angle_to(direction)
+
+    def get_a_axis(self):
+        return V2(self.a,0).rotate(-self.angle)
+
+    def get_angle_to_ellipse(self, e2):
+        return self.get_angle_to(e2.get_a_axis())
 
     def get_radius_at_angle(self, angle):
         """Angle is relative to self's a axis. unit is degrees"""
@@ -103,10 +109,14 @@ class Ellipse2D:
             gfx.pixel(screen, int(point.x), int(point.y), (0,0,0))
 ##            pos = gfx.aacircle(screen, int(point.x), int(point.y), 3, (0,0,0))
 ##        gfx.aapolygon(screen, points, (0,0,0))
-        xy = self.absolute_pos(V2(self.a,0))
-        x = int(xy[0])
-        y = int(xy[1])
-        gfx.line(screen, int(self.cm.x), int(self.cm.y), x, y, (0,0,0))
+##        xy = self.absolute_pos(V2(self.a,0))
+##        x = int(xy[0])
+##        y = int(xy[1])
+##        gfx.line(screen, int(self.cm.x), int(self.cm.y), x, y, (0,0,0))
+        x,y = self.get_a_axis() + self.cm
+        x = int(x)
+        y = int(y)
+        gfx.line(screen, int(self.cm.x), int(self.cm.y), x, y, (0,255,0))
         gfx.aacircle(screen, int(self.cm.x), int(self.cm.y), 3, (0,0,0))
 
 
@@ -116,33 +126,110 @@ def draw():
         e.draw(screen)
     pygame.display.flip()
 
-def build_lut(e1, e2, A, D):
-    lut = [[None for dist in range(D)] for angle in range(A)]
+def build_lut(e1, e2, fn=None):
+    if fn:
+        f = open(fn, "w")
+    lut = [[None for dist in DISTANCES] for angle in ANGLES]
     e1.angle = 0.
-    for angle in range(A):
+    e1.cm = V2(0,0)
+    for i_a,angle in enumerate(ANGLES):
+        print(angle)
         e2.angle = angle
-        for dist in range(D):
+        for i_d,dist in enumerate(DISTANCES):
             e2.cm = V2(dist, 0)
-            lut[angle][dist] = e1.get_one_intersection(e2)
+            i = e1.get_one_intersection(e2)
+            if i:
+                d,p1,p2 = i
+                lut[i_a][i_d] = d,p1
+                if fn:
+                    f.write(str(d)+" "+str(tuple(p1))+"\n")
+    f.close()
+    return lut
+
+def build_lut(e1, e2, fn=None):
+    if fn:
+        f = open(fn, "w")
+    lut = [[None for dist in DISTANCES] for angle in ANGLES]
+    e1.angle = 0.
+    e1.cm = V2(0,0)
+    for i_a,angle in enumerate(ANGLES):
+        print(angle)
+        e2.angle = angle
+        for i_d,dist in enumerate(DISTANCES):
+            e2.cm = V2(dist, 0)
+            i = e1.get_one_intersection(e2)
+            if i:
+                d,p1,p2 = i
+                lut[i_a][i_d] = d,p1
+                if fn:
+                    f.write(str(d)+" "+str(tuple(p1))+"\n")
+            elif fn:
+                f.write("None\n")
+    f.close()
+    return lut
+
+def load_lut(fn):
+    f = open(fn, "r")
+    lines = [line for line in f.readlines() if line]
+    f.close()
+    lut = [[None for dist in DISTANCES] for angle in ANGLES]
+    iline = 0
+    print("LL", len(lines))
+    for i_a,angle in enumerate(ANGLES):
+        for i_d,dist in enumerate(DISTANCES):
+            s = lines[iline]
+            if not "None" in s:
+                d,p = s.split("(")
+                p = p.replace(")","").replace(",","")
+                px = float(p.split(" ")[0])
+                py = float(p.split(" ")[1])
+                d = float(d)
+            lut[i_a][i_d] = d, (px,py)
+            iline += 1
+    f.close()
+    return lut
+
+ANGLES = list(range(90))
+DISTANCES = list(range(149,150))
+def showlut():
+    for i_a,angle in enumerate(ANGLES):
+        for i_d,dist in enumerate(DISTANCES):
+            if lut[i_a][i_d] is not None:
+                print(angle,dist,lut[i_a][i_d] )
 
 
-# screen = pygame.display.set_mode((800,600))
-# e1 = Ellipse2D(100,50,(200,200),50)
-# e2 = Ellipse2D(100,50,(300,300),0)
-# ellipses = [e1,e2]
-#
-# loop = True
-# while loop:
-#     for e in pygame.event.get():
-#         if e.type == pygame.QUIT:
-#             loop = False
-#         elif e.type == pygame.MOUSEMOTION:
-#             e1.cm = V2(e.pos)
-#             draw()
-#         elif e.type == pygame.MOUSEBUTTONDOWN:
-#             e1.angle += 10.
-#     i = e1.get_one_intersection(e2)
-#     if i:
-#         print(i)
-#
-# pygame.quit()
+screen = pygame.display.set_mode((800,600))
+e1 = Ellipse2D(100,50,(200,200),-10)
+e2 = Ellipse2D(100,50,(300,300),0)
+ellipses = [e1,e2]
+
+#faire en mode [angle_absolu] = (angle_relatif, distance_critique)
+TOLERANCE = 2.
+##lut = build_lut(e1,e2, "lut.dat")
+lut = load_lut("lut.dat")
+
+e2.cm = V2(300,300)
+loop = True
+clock = pygame.time.Clock()
+while loop:
+    clock.tick(100)
+    draw()
+    for e in pygame.event.get():
+        if e.type == pygame.QUIT:
+            loop = False
+        elif e.type == pygame.MOUSEMOTION:
+            e1.cm = V2(e.pos)
+        elif e.type == pygame.MOUSEBUTTONDOWN:
+            e1.angle += 10.
+            print(e1.get_angle_to_ellipse(e2))
+    i = e1.get_one_intersection(e2)
+    if i:
+        print(i)
+        rel_angle = int(e1.get_angle_to_ellipse(e2))
+        if rel_angle in ANGLES:
+            dist = int(e1.cm.distance_to(e2.cm))
+            if dist in DISTANCES:
+                print(rel_angle,dist)
+                print("     HEEY", lut[rel_angle][dist-DISTANCES[0]])
+
+pygame.quit()
