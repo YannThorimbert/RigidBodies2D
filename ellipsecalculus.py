@@ -126,23 +126,23 @@ def build_lut(e1, e2, A, D):
             lut[angle][dist] = e1.get_one_intersection(e2)
 
 
-screen = pygame.display.set_mode((800,600))
-e1 = Ellipse2D(100,50,(200,200),50)
-e2 = Ellipse2D(100,50,(300,300),0)
-ellipses = [e1,e2]
-
-loop = True
-while loop:
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            loop = False
-        elif e.type == pygame.MOUSEMOTION:
-            e1.cm = V2(e.pos)
-            draw()
-        elif e.type == pygame.MOUSEBUTTONDOWN:
-            e1.angle += 10.
-    i = e1.get_one_intersection(e2)
-    if i:
-        print(i)
-
-pygame.quit()
+# screen = pygame.display.set_mode((800,600))
+# e1 = Ellipse2D(100,50,(200,200),50)
+# e2 = Ellipse2D(100,50,(300,300),0)
+# ellipses = [e1,e2]
+#
+# loop = True
+# while loop:
+#     for e in pygame.event.get():
+#         if e.type == pygame.QUIT:
+#             loop = False
+#         elif e.type == pygame.MOUSEMOTION:
+#             e1.cm = V2(e.pos)
+#             draw()
+#         elif e.type == pygame.MOUSEBUTTONDOWN:
+#             e1.angle += 10.
+#     i = e1.get_one_intersection(e2)
+#     if i:
+#         print(i)
+#
+# pygame.quit()
