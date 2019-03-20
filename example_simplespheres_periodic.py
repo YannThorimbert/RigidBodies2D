@@ -8,7 +8,7 @@ import random
 import os
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-W, H = 200, 200
+W, H = 200, 600
 DT = 10.e-3
 COLL_TOL = 1
 TOL_DEL = COLL_TOL

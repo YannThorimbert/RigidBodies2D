@@ -1,6 +1,6 @@
 from pygame.math import Vector2 as V2
 
-DT = 2.e-3
+DT = 2.e-4
 FRICTION_COEFF = -1.e-2
 COLL_TOL = 5
 TOL_DEL = COLL_TOL
