@@ -21,7 +21,8 @@ COLL_FRICTION = 0.999
 
 
 
-COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
+# COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
+COLORS = [(0,0,255)]
 
 DRAW_ID = False
 
@@ -78,12 +79,13 @@ class Sphere2D:
         self.tang_forces = 0.
 
 
-    def draw(self):
+    def draw(self, color=None):
         if DRAW_ID:
             label = myfont.render(str(self.id), 1, (0,0,0))
             screen.blit(label, (int(self.cm.x), int(self.cm.y)))
+        color = self.color if color is None else color
         gfx.aacircle(screen, int(self.cm.x), int(self.cm.y), self.radius,
-                        self.color)
+                        color)
         #draw points
         n = 12
         a = 360./n
@@ -149,20 +151,70 @@ class Sphere2D:
             self.normal_force += force
             self.velocity *= COLL_FRICTION
 
+class CollisionGrid:
+
+    def __init__(self, nx, ny):
+        self.nx = nx
+        self.ny = ny
+        self.meshes = None
+        self.factorX = float(nx) / W
+        self.factorY = float(ny) / H
+
+    def coord2grid(self, coord):
+        x, y = int(self.factorX*coord[0]), int(self.factorY*coord[1])
+        if x < 0: x = 0
+        if x >= self.nx: x = self.nx-1
+        if y < 0: y = 0
+        if y >= self.ny: y = self.ny-1
+        return x, y
+        # return int(factorX*coord[0]), int(factorY*coord[1])
+
+    def add_mesh(self, mesh):
+        x,y = self.coord2grid(mesh.cm)
+        self.meshes[x][y].append(mesh)
+
+    def rebuild(self, meshes):
+        self.meshes = [[list() for i in range(self.ny)] for j in range(self.nx)]
+        for m in meshes:
+            self.add_mesh(m)
+
+    def collide(self):
+        for x in range(self.nx):
+            for y in range(self.ny):
+                for m1 in self.meshes[x][y]:
+                    #x
+                    self.collide_with(m1, x, y)
+                    self.collide_with(m1, x, y-1)
+                    self.collide_with(m1, x, y+1)
+                    #x-1
+                    self.collide_with(m1, x-1, y)
+                    self.collide_with(m1, x-1, y-1)
+                    self.collide_with(m1, x-1,  y+1)
+                    #x+1
+                    self.collide_with(m1, x+1, y)
+                    self.collide_with(m1, x+1, y-1)
+                    self.collide_with(m1, x+1, y+1)
+
+    def collide_with(self, mesh, x, y):
+        exist = 0 <= x < self.nx and 0 <= y < self.ny
+        if not exist:
+            return
+        for other in self.meshes[x][y]:
+            if mesh is not other:
+                mesh.collide_spring(other)
+
 def draw_meshes():
     for m in meshes:
         m.draw()
 
 def add_forces():
+    collision_grid.rebuild(meshes)
+    collision_grid.collide()
     for im1,m in enumerate(meshes):
         #special collision with walls
         m.collide_spring_wall((m.cm.x,H)) #bottom wall
         m.collide_spring_wall((0,m.cm.y)) #left wall
         m.collide_spring_wall((W,m.cm.y)) #right wall
-        #collisions
-        for im2,m2 in enumerate(meshes):
-            if im1 != im2:
-                m.collide_spring(m2)
         #gravity
         m.normal_force += GRAVITY
         velnorm = m.velocity.length()
@@ -173,6 +225,21 @@ def add_forces():
 def refresh_physics():
     for m in meshes:
         m.refresh_physics()
+
+R = 15
+grid_cell_size = 3*R
+nx = int(W/grid_cell_size)
+ny = int(H/grid_cell_size)
+
+print("Nx, Ny ", nx, ny)
+print("W, H ", W, H)
+
+
+collision_grid = CollisionGrid(nx,ny)
+print(2*R*collision_grid.factorX, ":", R, collision_grid.factorX,collision_grid.nx,W)
+assert 2*R*collision_grid.factorX <= 1.
+assert 2*R*collision_grid.factorY <= 1.
+
 
 
 screen = pygame.display.set_mode((W,H))
@@ -193,18 +260,26 @@ else:
     nspheres = 50
 
 print("Wanted number of spheres:",nspheres)
-R = 20
+
 meshes = []
 # hmax = max(H, int(H * nspheres/50.))
 # hmax = 2*H
-hmin = -H
+hmin = -0
 for i in range(nspheres):
+    debug_counter = 0
     m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
     while m.is_in_collision(meshes):
         m.set_pos((random.randint(R+1,W-R-1), random.randint(hmin,H-R-1)))
+        debug_counter += 1
+        if debug_counter > 10000:
+            print("Couldn't initialize with this domain size and sphere size")
+            break
+    if debug_counter > 10000:
+        break
     meshes.append(m)
 
 print("Final number of spheres:", len(meshes))
+
 
 screen.fill((255,255,255))
 draw_meshes()
@@ -228,7 +303,15 @@ while loop:
         elif e.type == pygame.KEYDOWN:
             SHOWFORCES = not(SHOWFORCES)
     if iteration%SHOWITER == 0:
+        # filling = []
+        # for x in range(collision_grid.nx):
+        #     for y in range(collision_grid.ny):
+        #         filling.append(len(collision_grid.meshes[x][y]))
+        print("Min and Max filling = ", min(filling), max(filling))
         draw_meshes()
+        for x in range(collision_grid.nx):
+            for mesh in collision_grid.meshes[x][0]:
+                mesh.draw((0,255,0))
         pygame.display.flip()
     iteration += 1
 
