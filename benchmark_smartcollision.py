@@ -262,6 +262,8 @@ else:
 print("Wanted number of spheres:",nspheres)
 
 meshes = []
+# hmax = max(H, int(H * nspheres/50.))
+# hmax = 2*H
 hmin = -0
 for i in range(nspheres):
     debug_counter = 0
@@ -290,12 +292,19 @@ while loop:
     if iteration%SHOWITER == 0:
         clock.tick(100)
         screen.fill((255,255,255))
+    # if iteration%100 == 0:
+    #     print(iteration*DT, sum([m.get_energy() for m in meshes]))
     add_forces()
     refresh_physics()
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             loop = False
     if iteration%SHOWITER == 0:
+        # filling = []
+        # for x in range(collision_grid.nx):
+        #     for y in range(collision_grid.ny):
+        #         filling.append(len(collision_grid.meshes[x][y]))
+        # print("Min and Max filling = ", min(filling), max(filling))
         draw_meshes()
         for x in range(collision_grid.nx):
             for mesh in collision_grid.meshes[x][0]:
