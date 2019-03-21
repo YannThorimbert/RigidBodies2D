@@ -227,7 +227,8 @@ def refresh_physics():
         m.refresh_physics()
 
 R = 15
-grid_cell_size = 3*R
+#be sure that grid_cell_size >= 2*R, with R the maximum Radius !!!!
+grid_cell_size = 6*R
 nx = int(W/grid_cell_size)
 ny = int(H/grid_cell_size)
 
@@ -262,7 +263,8 @@ else:
 print("Wanted number of spheres:",nspheres)
 
 meshes = []
-hmin = -0
+meshes.append(Sphere2D(3*R, W//2, H//2))
+hmin = -H//2
 for i in range(nspheres):
     debug_counter = 0
     m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))

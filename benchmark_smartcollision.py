@@ -1,14 +1,9 @@
 from __future__ import print_function, division
-import math, sys
-import pygame
+import math, sys, random, time
 from pygame.math import Vector2 as V2
-import pygame.gfxdraw as gfx
-import random
+import matplotlib.pyplot as plt
 
-import os
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-W, H = 300, 800
+W, H = 800, 400
 DT = 10.e-3
 COLL_TOL = 1
 TOL_DEL = COLL_TOL
@@ -203,11 +198,7 @@ class CollisionGrid:
             if mesh is not other:
                 mesh.collide_spring(other)
 
-def draw_meshes():
-    for m in meshes:
-        m.draw()
-
-def add_forces():
+def add_forces(collision_grid, meshes):
     collision_grid.rebuild(meshes)
     collision_grid.collide()
     for im1,m in enumerate(meshes):
@@ -222,94 +213,116 @@ def add_forces():
             friction = m.velocity.normalize()*velnorm*velnorm*FRICTION_COEFF
             m.normal_force += friction
 
-def refresh_physics():
+def naive_add_forces(meshes):
+    for im1,m in enumerate(meshes):
+        #special collision with walls
+        m.collide_spring_wall((m.cm.x,H)) #bottom wall
+        m.collide_spring_wall((0,m.cm.y)) #left wall
+        m.collide_spring_wall((W,m.cm.y)) #right wall
+        #collisions
+        for im2,m2 in enumerate(meshes):
+            if im1 != im2:
+                m.collide_spring(m2)
+        #gravity
+        m.normal_force += GRAVITY
+        velnorm = m.velocity.length()
+        if velnorm > 0:
+            friction = m.velocity.normalize()*velnorm*velnorm*FRICTION_COEFF
+            m.normal_force += friction
+
+def refresh_physics(meshes):
     for m in meshes:
         m.refresh_physics()
 
-R = 15
-grid_cell_size = 3*R
-nx = int(W/grid_cell_size)
-ny = int(H/grid_cell_size)
 
-print("Nx, Ny ", nx, ny)
-print("W, H ", W, H)
+def run(R, grid_cell_factor, nspheres):
 
+    grid_cell_size = grid_cell_factor*R
+    nx = int(W/grid_cell_size)
+    ny = int(H/grid_cell_size)
 
-collision_grid = CollisionGrid(nx,ny)
-print(2*R*collision_grid.factorX, ":", R, collision_grid.factorX,collision_grid.nx,W)
-assert 2*R*collision_grid.factorX <= 1.
-assert 2*R*collision_grid.factorY <= 1.
+    print("Nx, Ny ", nx, ny)
+    print("W, H ", W, H)
 
 
-
-screen = pygame.display.set_mode((W,H))
-pygame.font.init()
-
-myfont = pygame.font.SysFont("monospace", 12)
-
-##m1 = Sphere2D(30, W//2, H//2)
-##m2 = Sphere2D(30, W//2+40, H//2-100)
-##meshes = [m1,m2]
-
-if len(sys.argv) == 3:
-    nspheres = int(sys.argv[1])
-    random.seed(int(sys.argv[2]))
-elif len(sys.argv) == 2:
-    nspheres = int(sys.argv[1])
-else:
-    nspheres = 100
-
-print("Wanted number of spheres:",nspheres)
-
-meshes = []
-# hmax = max(H, int(H * nspheres/50.))
-# hmax = 2*H
-hmin = -0
-for i in range(nspheres):
-    debug_counter = 0
-    m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
-    while m.is_in_collision(meshes):
-        m.set_pos((random.randint(R+1,W-R-1), random.randint(hmin,H-R-1)))
-        debug_counter += 1
-        if debug_counter > 10000:
-            print("Couldn't initialize with this domain size and sphere size")
-            break
-    if debug_counter > 10000:
-        break
-    meshes.append(m)
-
-print("Final number of spheres:", len(meshes))
+    collision_grid = CollisionGrid(nx,ny)
+    print(2*R*collision_grid.factorX, ":", R, collision_grid.factorX,collision_grid.nx,W)
+    assert 2*R*collision_grid.factorX <= 1.
+    assert 2*R*collision_grid.factorY <= 1.
 
 
-screen.fill((255,255,255))
-draw_meshes()
-pygame.display.flip()
-iteration = 0
-loop = True
-clock = pygame.time.Clock()
-SHOWITER = 10
-while loop:
-    if iteration%SHOWITER == 0:
-        clock.tick(100)
-        screen.fill((255,255,255))
-    # if iteration%100 == 0:
-    #     print(iteration*DT, sum([m.get_energy() for m in meshes]))
-    add_forces()
-    refresh_physics()
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            loop = False
-    if iteration%SHOWITER == 0:
-        # filling = []
-        # for x in range(collision_grid.nx):
-        #     for y in range(collision_grid.ny):
-        #         filling.append(len(collision_grid.meshes[x][y]))
-        # print("Min and Max filling = ", min(filling), max(filling))
-        draw_meshes()
-        for x in range(collision_grid.nx):
-            for mesh in collision_grid.meshes[x][0]:
-                mesh.draw((0,255,0))
-        pygame.display.flip()
-    iteration += 1
+    print("Wanted number of spheres:",nspheres)
 
-pygame.quit()
+    meshes = []
+    hmin = 0
+    for i in range(nspheres):
+        debug_counter = 0
+        m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
+        while m.is_in_collision(meshes):
+            m.set_pos((random.randint(R+1,W-R-1), random.randint(hmin,H-R-1)))
+            debug_counter += 1
+            if debug_counter > 10000:
+                print("Couldn't initialize with this domain size and sphere size")
+                assert(False)
+        meshes.append(m)
+
+    print("Final number of spheres:", len(meshes))
+    beg = time.clock()
+    for i in range(NITER):
+        add_forces(collision_grid, meshes)
+        refresh_physics(meshes)
+    end = time.clock()
+    print("Time ", nspheres, R, grid_cell_factor, end-beg)
+    return [nspheres, R, grid_cell_factor, end-beg]
+
+def naive_run(R, nspheres):
+    print("Wanted number of spheres:",nspheres)
+    meshes = []
+    hmin = 0
+    for i in range(nspheres):
+        debug_counter = 0
+        m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
+        while m.is_in_collision(meshes):
+            m.set_pos((random.randint(R+1,W-R-1), random.randint(hmin,H-R-1)))
+            debug_counter += 1
+            if debug_counter > 10000:
+                print("Couldn't initialize with this domain size and sphere size")
+                assert(False)
+        meshes.append(m)
+
+    print("Final number of spheres:", len(meshes))
+    beg = time.clock()
+    for i in range(NITER):
+        naive_add_forces(meshes)
+        refresh_physics(meshes)
+    end = time.clock()
+    print("Time naive",end-beg)
+    return end-beg
+
+
+NITER = 1000
+Rlist = [2,5,10]
+Flist = [2,3,5,10]
+Nlist = [2,50,100,150,200,250,300,350,400] #max 400
+stats = []
+f = open("stats.dat","w")
+for R in Rlist:
+    for grid_cell_factor in Flist:
+        for nspheres in Nlist:
+            Tnaive = naive_run(R, nspheres)
+            stat = run(R, grid_cell_factor, nspheres) + [Tnaive]
+            print()
+            print("**********")
+            print("Stat : ",stat)
+            f.write(" ".join([str(x) for x in stat])+"\n")
+            stats.append(stat)
+f.close()
+
+# stats_R = []
+# for R in Rlist:
+#
+#
+# plt.clf()
+# plt.plot([R for R,F,N,T in stats], [T for R,F,N,T in stats], "o")
+# plt.title("T(R)")
+# plt.show()
