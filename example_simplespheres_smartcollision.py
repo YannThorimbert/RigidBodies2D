@@ -8,7 +8,7 @@ import random
 import os
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-W, H = 300, 800
+W, H = 1000, 800
 DT = 10.e-3
 COLL_TOL = 1
 TOL_DEL = COLL_TOL
@@ -21,8 +21,8 @@ COLL_FRICTION = 0.999
 
 
 
-# COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
-COLORS = [(0,0,255)]
+COLORS = [(0,)*3, (127,)*3, (255,0,0), (0,255,0), (0,0,255), (255,0,255)]
+#COLORS = [(0,0,255)]
 
 DRAW_ID = False
 
@@ -41,7 +41,7 @@ class Sphere2D:
         self.radius = radius
         self.cm = V2(x,y)
         self.angle = 0.
-        self.tang_force = 0.
+        # self.tang_force = 0.
         self.normal_force = V2()
         self.velocity = V2() #in pix/s
         self.ang_velocity = 0. #in 1/s
@@ -56,27 +56,27 @@ class Sphere2D:
         r = point - self.cm
         unit_to_cm = r.normalize()
         self.normal_force += force
-        self.tang_force += -force.cross(unit_to_cm) * r.length()
+        # self.tang_force += -force.cross(unit_to_cm) * r.length()
 
     def refresh_translation(self):
         a = self.normal_force/self.mass
         self.velocity += a*DT
         self.move(self.velocity*DT)
 
-    def refresh_rotation(self):
-        a = self.tang_force/self.moment_of_inertia
-        self.ang_velocity += a*DT
-        self.angle += self.ang_velocity*DT*360.
+    # def refresh_rotation(self):
+    #     a = self.tang_force/self.moment_of_inertia
+    #     self.ang_velocity += a*DT
+    #     self.angle += self.ang_velocity*DT*360.
 
     def refresh_physics(self):
         if not self.fixed:
             self.refresh_translation()
-            self.refresh_rotation()
+            # self.refresh_rotation()
             self.clear_forces()
 
     def clear_forces(self):
         self.normal_force = V2()
-        self.tang_forces = 0.
+        # self.tang_forces = 0.
 
 
     def draw(self, color=None):
@@ -146,7 +146,7 @@ class Sphere2D:
 ##            SPRING_CONSTANT = 2e-1
 ##            force_intensity = -SPRING_CONSTANT*(d-COLL_TOL)**7
             normal_to_wall = delta.normalize()
-            contact_point = self.cm + normal_to_wall*self.radius
+            # contact_point = self.cm + normal_to_wall*self.radius
             force = force_intensity * normal_to_wall
             self.normal_force += force
             self.velocity *= COLL_FRICTION
@@ -226,9 +226,9 @@ def refresh_physics():
     for m in meshes:
         m.refresh_physics()
 
-R = 15
+R = 8
 #be sure that grid_cell_size >= 2*R, with R the maximum Radius !!!!
-grid_cell_size = 6*R
+grid_cell_size = 4*R
 nx = int(W/grid_cell_size)
 ny = int(H/grid_cell_size)
 
@@ -263,11 +263,12 @@ else:
 print("Wanted number of spheres:",nspheres)
 
 meshes = []
-meshes.append(Sphere2D(3*R, W//2, H//2))
+#meshes.append(Sphere2D(3*R, W//2, H//2))
 hmin = -H//2
 for i in range(nspheres):
     debug_counter = 0
-    m = Sphere2D(R, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
+    radius = random.randint(R, 2*R)
+    m = Sphere2D(radius, random.randint(R+1,W-R-1), random.randint(hmin,H-R-1))
     while m.is_in_collision(meshes):
         m.set_pos((random.randint(R+1,W-R-1), random.randint(hmin,H-R-1)))
         debug_counter += 1

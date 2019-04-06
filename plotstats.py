@@ -76,6 +76,7 @@ for F in FS:
         symb = symbols[i%len(symbols)]
         N, Tg, Tn = select2("N","F",F,"R",R)
         plt.plot(N, Tg, color+symb+"-", label="Grid (R,F)="+str(int(R))+","+str(int(F)))
+plt.plot(N, Tn, "--", label="Naive")
 
 
 plt.legend(loc="upper left")
