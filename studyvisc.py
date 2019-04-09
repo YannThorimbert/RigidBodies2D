@@ -10,7 +10,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 #Kausch : circle packing = 0.907; random circle packing = 0.82
 
-W, H = 800, 400
+W, H = 400, 400
 DT = 10.e-3
 COLL_TOL = 1
 TOL_DEL = COLL_TOL
@@ -271,7 +271,7 @@ def draw_meshes():
     for m in meshes:
         m.draw()
 
-def add_forces():
+def add_forces(collision_grid,meshes):
     collision_grid.rebuild(meshes)
     collision_grid.collide()
     for im1,m in enumerate(meshes):
@@ -285,215 +285,150 @@ def add_forces():
             friction = m.velocity.normalize()*velnorm*velnorm*FRICTION_COEFF
             m.normal_force += friction
 
-def refresh_physics():
+def refresh_physics(meshes):
     for m in meshes:
         m.refresh_physics()
-
-R = 12
-#be sure that grid_cell_size >= 2*R, with R the maximum Radius !!!!
-grid_cell_size = 4*R
-nx = int(W/grid_cell_size)
-ny = int(H/grid_cell_size)
-
-print("Nx, Ny ", nx, ny)
-print("W, H ", W, H)
-
-
-collision_grid = CollisionGrid(nx,ny)
-print(2*R*collision_grid.factorX, ":", R, collision_grid.factorX,collision_grid.nx,W)
-assert 2*R*collision_grid.factorX <= 1.
-assert 2*R*collision_grid.factorY <= 1.
-
-
-
-screen = pygame.display.set_mode((W,H))
-pygame.font.init()
-
-myfont = pygame.font.SysFont("monospace", 12)
-
-##m1 = Sphere2D(30, W//2, H//2)
-##m2 = Sphere2D(30, W//2+40, H//2-100)
-##meshes = [m1,m2]
-seed = 0
-if len(sys.argv) == 3:
-    nspheres = int(sys.argv[1])
-    seed = int(sys.argv[2])
-    random.seed(seed)
-elif len(sys.argv) == 2:
-    nspheres = int(sys.argv[1])
-else:
-    nspheres = 100
-
-print("Wanted number of spheres:",nspheres)
-
-meshes = []
-# meshes.append(Sphere2D(R, W - 2.1*R, H//2))
-# meshes.append(Sphere2D(R, R, H//2))
-#
-# # meshes.append(Sphere2D(R, W/2., H//2))
-# # meshes.append(Sphere2D(R, W/2. + 3*R, H//2))
-#
-# meshes[0].velocity.x = 50.
-
-
-# #naive initialization
-# for i in range(nspheres):
-#     debug_counter = 0
-#     radius = random.randint(R, R)
-#     m = Sphere2D(radius, random.randint(0,W), random.randint(radius+1,H-radius-1))
-#     while m.is_in_collision(meshes):
-#         m.set_pos((random.randint(0,W), random.randint(radius+1,H-radius-1)))
-#         debug_counter += 1
-#         if debug_counter > 10000:
-#             print("Couldn't initialize with this domain size and sphere size")
-#             break
-#     if debug_counter > 10000:
-#         break
-#     meshes.append(m)
-
-
-BIMODAL_FACTOR = 2.
-#dense initialization: #########################################################
-for i in range(nspheres):
-    debug_counter = 0
-    radius = random.randint(R, BIMODAL_FACTOR*R)
-    m = Sphere2D(radius, random.randint(0,W), random.randint(radius+1,H-radius-1))
-    meshes.append(m)
 
 
 
 FRICTION_COEFF = 0.9
 COLL_FRICTION = 0.1
+def go(seed, nspheres, ulid):
+    global FRICTION_COEFF, COLL_FRICTION
+    R = 12
+    #be sure that grid_cell_size >= 2*R, with R the maximum Radius !!!!
+    grid_cell_size = 4*R
+    nx = int(W/grid_cell_size)
+    ny = int(H/grid_cell_size)
 
-for m in meshes:
-    m.velocity = V2()
-    m.clear_forces()
-    assert 0 < m.cm[1] < H
-
-print("Final number of spheres:", len(meshes))
-print("Volume fraction:", sum([math.pi*m.radius**2 for m in meshes]) / (W*H))
+    print("Nx, Ny ", nx, ny)
+    print("W, H ", W, H)
 
 
-screen.fill((255,255,255))
-draw_meshes()
-pygame.display.flip()
+    collision_grid = CollisionGrid(nx,ny)
+    print(2*R*collision_grid.factorX, ":", R, collision_grid.factorX,collision_grid.nx,W)
+    assert 2*R*collision_grid.factorX <= 1.
+    assert 2*R*collision_grid.factorY <= 1.
 
-# pygame.time.wait(5000)
+    ##m1 = Sphere2D(30, W//2, H//2)
+    ##m2 = Sphere2D(30, W//2+40, H//2-100)
+    ##meshes = [m1,m2]
+    print("Wanted number of spheres:",nspheres)
 
-iteration = 0
-loop = True
-clock = pygame.time.Clock()
-SHOWITER = 10
-while loop:
-    if iteration%SHOWITER == 0:
-        clock.tick(100)
-        screen.fill((0,0,0))
-        if iteration%100:
-            print(iteration)
-    add_forces()
-    refresh_physics()
+    meshes = []
+
+    BIMODAL_FACTOR = 1.
+    #dense initialization: #########################################################
+    for i in range(nspheres):
+        debug_counter = 0
+        radius = random.randint(R, BIMODAL_FACTOR*R)
+        m = Sphere2D(radius, random.randint(0,W), random.randint(radius+1,H-radius-1))
+        meshes.append(m)
+
+
+    FRICTION_COEFF = 0.9
+    COLL_FRICTION = 0.1
+
     for m in meshes:
-        if not(0 <= m.cm.x <= W) or not(0 <= m.cm.y <= H):
-            x = random.randint(0,W)
-            y = random.randint(radius+1,H-radius-1)
-            m.set_pos(V2(x, y))
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            loop = False
-    if iteration%SHOWITER == 0:
-        draw_meshes()
-        pygame.display.flip()
-    iteration += 1
-    if iteration > 400 or collision_grid.ncollisions == 0:
-        break
+        m.velocity = V2()
+        m.clear_forces()
+        assert 0 < m.cm[1] < H
 
-#true simulation: ##############################################################
+    print("Final number of spheres:", len(meshes))
+    print("Volume fraction:", sum([math.pi*m.radius**2 for m in meshes]) / (W*H))
 
-FRICTION_COEFF = 0.
-COLL_FRICTION = 0.999
-VEL_LID = 60
+    iteration = 0
+    loop = True
+    clock = pygame.time.Clock()
+    SHOWITER = 10
+    while loop:
+        add_forces(collision_grid,meshes)
+        refresh_physics(meshes)
+        for m in meshes:
+            if not(0 <= m.cm.x <= W) or not(0 <= m.cm.y <= H):
+                x = random.randint(0,W)
+                y = random.randint(radius+1,H-radius-1)
+                m.set_pos(V2(x, y))
+        iteration += 1
+        if iteration > 400 or collision_grid.ncollisions == 0:
+            break
 
-for m in meshes:
-    assert 0 < m.cm[1] < H
-    m.velocity = V2()
-    m.clear_forces()
-    if m.cm.y < 2*R+5:
-        m.velocity.x = VEL_LID
-        m.color = (0,255,0)
-        m.set_forced()
-    elif m.cm.y > H - 2*R+-5:
-        m.velocity.x = -VEL_LID
-        m.color = (0,255,0)
-        m.set_forced()
-    else:
-        m.color = (0,0,0)
+    #true simulation: ##############################################################
+
+    FRICTION_COEFF = 0.
+    COLL_FRICTION = 0.999
+    VEL_LID = ulid
+
+    for m in meshes:
+        assert 0 < m.cm[1] < H
+        m.velocity = V2()
+        m.clear_forces()
+        if m.cm.y < 2*R+5:
+            m.velocity.x = VEL_LID
+            m.color = (0,255,0)
+            m.set_forced()
+        elif m.cm.y > H - 2*R+-5:
+            m.velocity.x = -VEL_LID
+            m.color = (0,255,0)
+            m.set_forced()
+        else:
+            m.color = (0,0,0)
 
 
-print("Final number of spheres:", len(meshes))
-phi = sum([math.pi*m.radius**2 for m in meshes]) / (W*H)
-print("Volume fraction:", phi)
+    print("Final number of spheres:", len(meshes))
+    phi = sum([math.pi*m.radius**2 for m in meshes]) / (W*H)
+    print("Volume fraction:", phi)
+
+    # pygame.time.wait(5000)
+
+    #collision grid just to average vel, no collisions !
+    avg_vel = CollisionGrid(1, H//6)
+
+    iteration = 0
+    loop = True
+    clock = pygame.time.Clock()
+    SHOWITER = 10
+
+    stats_u = [0. for i in range(avg_vel.ny)]
+    n_avg = 0
+
+    MAXITER = 20000
+    AVG_ITER = 100
+
+    while loop:
+        if iteration % AVG_ITER == 0 and iteration > 10000:
+            avg_vel.rebuild(meshes)
+            avg_ux = avg_vel.compute_average_u()[0]
+            # print(len(stats_u), len(avg_ux))
+            for y,u_x in enumerate(avg_ux):
+                stats_u[y] += u_x
+                n_avg += 1
+            print(iteration, round(sum([m.get_energy() for m in meshes])))
+        add_forces(collision_grid,meshes)
+        refresh_physics(meshes)
+        iteration += 1
+        if iteration > MAXITER:
+            break
+
+    print("Courbe:")
+    avg_ux = [v/n_avg for v in stats_u]
+
+    visc = (avg_ux[8] - avg_ux[len(avg_ux)-1-8]) / len(avg_ux[8:len(avg_ux)-1-8])
+    visc *= 1000.
+    visc = round(visc,2)
+    print("VISC = ", visc)
+    return visc
 
 
-screen.fill((255,255,255))
-draw_meshes()
-pygame.display.flip()
+data = []
+for ulid in range(40,125,5):
+    visc=go(0,300,ulid)
+    print(ulid,visc)
+    data.append(visc)
 
-# pygame.time.wait(5000)
-
-#collision grid just to average vel, no collisions !
-avg_vel = CollisionGrid(1, H//6)
-
-iteration = 0
-loop = True
-clock = pygame.time.Clock()
-SHOWITER = 10
-
-stats_u = [0. for i in range(avg_vel.ny)]
-n_avg = 0
-
-MAXITER = 20000
-AVG_ITER = 100
-
-while loop:
-    if iteration%SHOWITER == 0:
-        # clock.tick(100)
-        screen.fill((255,255,255))
-    if iteration % AVG_ITER == 0 and iteration > 10000:
-        avg_vel.rebuild(meshes)
-        avg_ux = avg_vel.compute_average_u()[0]
-        # print(len(stats_u), len(avg_ux))
-        for y,u_x in enumerate(avg_ux):
-            stats_u[y] += u_x
-            n_avg += 1
-        print(iteration, round(sum([m.get_energy() for m in meshes])))
-    add_forces()
-    refresh_physics()
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
-            loop = False
-    if iteration%SHOWITER == 0:
-        draw_meshes()
-        pygame.display.flip()
-        # if iteration%(2*SHOWITER) == 0:
-        #     pygame.image.save(screen, "img"+str(iteration).zfill(8)+".png")
-    iteration += 1
-    if iteration > MAXITER:
-        break
-
-pygame.quit()
-
-print("Courbe:")
-avg_ux = [v/n_avg for v in stats_u]
-
-visc = (avg_ux[8] - avg_ux[len(avg_ux)-1-8]) / len(avg_ux[8:len(avg_ux)-1-8])
-visc *= 1000.
-visc = round(visc,2)
-print("VISC = ", visc)
-
+print(data)
 
 import matplotlib.pyplot as plt
-
 plt.clf()
-plt.plot(avg_ux,"o-")
-plt.title("visc="+str(visc)+", W,H="+str(W)+","+str(H)+",N="+str(len(meshes))+", C="+str(COLL_FRICTION)+", S="+str(seed)+"\nR,B="+str(R)+","+str(BIMODAL_FACTOR)+", Ulid="+str(VEL_LID)+",phi="+str(round(phi,2)))
+plt.plot(data,"o-")
 plt.show()

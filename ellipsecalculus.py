@@ -17,7 +17,7 @@ a, b = 100, 50
 min_dist = 2*min(a,b) - 1
 max_dist = 2*max(a,b) + 1
 
-BUILD = True
+BUILD = False
 DA = 1
 DD = 1
 DACM = 1
@@ -61,23 +61,23 @@ class Ellipse2D:
         for point in self.iterate_points_along_y():
             yield point
 
-    def iterate_points_along_x_quarter(self):
-        for i in range(self.nx):
-            x = -self.a + float(i)/self.nx * 2*self.a
-            y = self.b * math.sqrt(1 - (x/self.a)**2)
-            yield V2(x,y)
-
-    def iterate_points_along_y_quarter(self):
-        for i in range(self.ny):
-            y = -self.b + float(i)/self.ny * 2*self.b
-            x = self.a * math.sqrt(1 - (y/self.b)**2)
-            yield V2(x,y)
-
-    def iterate_points_quarter(self):
-        for point in self.iterate_points_along_x_quarter():
-            yield point
-        for point in self.iterate_points_along_y_quarter():
-            yield point
+    # def iterate_points_along_x_quarter(self):
+    #     for i in range(self.nx):
+    #         x = -self.a + float(i)/self.nx * 2*self.a
+    #         y = self.b * math.sqrt(1 - (x/self.a)**2)
+    #         yield V2(x,y)
+    #
+    # def iterate_points_along_y_quarter(self):
+    #     for i in range(self.ny):
+    #         y = -self.b + float(i)/self.ny * 2*self.b
+    #         x = self.a * math.sqrt(1 - (y/self.b)**2)
+    #         yield V2(x,y)
+    #
+    # def iterate_points_quarter(self):
+    #     for point in self.iterate_points_along_x_quarter():
+    #         yield point
+    #     for point in self.iterate_points_along_y_quarter():
+    #         yield point
 
     def get_all_intersections(self, other_ellipse):
         intersections = []
@@ -106,21 +106,21 @@ class Ellipse2D:
                         # print("chouette")
                         return d, p1, p2
 
-    def get_one_intersection_quarter(self, other_ellipse):
-        """Return:
-            d : the distance between the boundaries
-            p1 : the concerned point in self's boundary (absolute)
-            p2 : the concerned point in other's boundary (absolute)
-        """
-        R = self.max_radius + other_ellipse.max_radius
-        if self.cm.distance_to(other_ellipse.cm) <= R:
-            for p1 in self.iterate_points_quarter():
-                p1 = self.absolute_pos(p1)
-                for p2 in other_ellipse.iterate_points_quarter():
-                    p2 = other_ellipse.absolute_pos(p2)
-                    d = p1.distance_to(p2)
-                    if d < TOLERANCE:
-                        return d, p1, p2
+    # def get_one_intersection_quarter(self, other_ellipse):
+    #     """Return:
+    #         d : the distance between the boundaries
+    #         p1 : the concerned point in self's boundary (absolute)
+    #         p2 : the concerned point in other's boundary (absolute)
+    #     """
+    #     R = self.max_radius + other_ellipse.max_radius
+    #     if self.cm.distance_to(other_ellipse.cm) <= R:
+    #         for p1 in self.iterate_points_quarter():
+    #             p1 = self.absolute_pos(p1)
+    #             for p2 in other_ellipse.iterate_points_quarter():
+    #                 p2 = other_ellipse.absolute_pos(p2)
+    #                 d = p1.distance_to(p2)
+    #                 if d < TOLERANCE:
+    #                     return d, p1, p2
 
     def absolute_pos(self, p):
         return p.rotate(-self.angle)+self.cm
@@ -202,7 +202,7 @@ def build_lut(e1, e2, fn=None):
                         f.write("None\n")
                 else:
                     e2.cm = V2(dist,0).rotate(acm)
-                    i = e1.get_one_intersection_quarter(e2)
+                    i = e1.get_one_intersection(e2)
                     if i:
                         found = True
                         d,p1,p2 = i
@@ -363,13 +363,9 @@ else:
 # plt.show()
 # exit()
 
-screen = pygame.display.set_mode((800,600))
-
-
-
-
 
 if __name__ == "__main__":
+    screen = pygame.display.set_mode((800,600))
     e1.cm = V2(300,300)
     loop = True
     clock = pygame.time.Clock()
@@ -387,6 +383,7 @@ if __name__ == "__main__":
                 else:
                     e2.angle += 10.
                 print(e1.get_angle_to_ellipse(e2))
+
         # L = use_lut(e1,e2)
         # if L:
         #     d,p = L
@@ -394,8 +391,9 @@ if __name__ == "__main__":
         #     x = int(x)
         #     y = int(y)
         #     gfx.aacircle(screen, x,y, 3, (0,0,255))
-        #
-        L = e1.get_one_intersection_quarter(e2)
+
+        # L = e1.get_one_intersection_quarter(e2)
+        L = e1.get_one_intersection(e2)
         if L:
             d,p1,p2 = L
             x,y = p1
